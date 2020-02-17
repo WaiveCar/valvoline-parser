@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import os, sys, re
+import os, sys, re, json
 
 raw = os.popen("/usr/bin/pdftotext -raw {} /dev/stdout".format(sys.argv[1])).read()
 
@@ -31,8 +31,12 @@ if 'odo' in kv:
   # shop title and the number
   shop = '(?<={}\n)[^\n]*\n[^\n]*'.format(kv['odo'])
   res = re.search(shop, raw, re.M)
+  kv['odo'] = re.sub(',', '', kv['odo'])
   if res:
-    kv['shop'] = res.group(0).split('\n')
+    parts = res.group(0).split('\n')
+    second = re.split(r'\-+', parts[1])
+    second.insert(0, parts[0])
+    kv['shop'] = second
 
 # The itemized list on the receipt is a bit tricky.
 # first we capture the beginning, then we get everything up to the end of the receipt
@@ -47,3 +51,5 @@ if receipt:
       kv['receipt'].append((name, item.group(2)))
 
 kv['raw'] = raw
+
+print(json.dumps(kv))
